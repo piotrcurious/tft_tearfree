@@ -4,12 +4,11 @@
 
 // define type of display type - for choosing right commands being sent 
 //uncomment just one from below :
-#define TFT_ST7789
-//#define TFT_ST7735 
+//#define TFT_ST7789
+#define TFT_ST7735 
 
-
-#define TFT_WIDTH 240
-#define TFT_HEIGHT 200 // 124k limit of esp32 dma
+#define TFT_WIDTH 80
+#define TFT_HEIGHT 160 // 124k limit of esp32 dma
 //#define DISPLAY_REFRESH_RATE 60.0
 
 float   DISPLAY_REFRESH_RATE = 33.0;
@@ -19,6 +18,7 @@ float   DISPLAY_REFRESH_RATE = 33.0;
                       // after adjusting write down parameters , disable debug and put them into code
 
 #ifdef TEARING_DEBUG
+#ifdef TFT_ST7789
 uint8_t var1 = 0x1f; // frame 
 uint8_t var2 = 0x16; // front porch
 uint8_t var3 = 0x3f; // back porch
@@ -26,6 +26,16 @@ uint8_t var3 = 0x3f; // back porch
 uint8_t var4 = 0x1f; // frame 
 uint8_t var5 = 0x40; // front porch
 uint8_t var6 = 0x3f;  // back porch
+#endif //#ifdef TFT_ST7789
+#ifdef TFT_ST7735
+uint8_t var1 = 0x0b; // frame 
+uint8_t var2 = 0x16; // front porch
+uint8_t var3 = 0x3f; // back porch8_t var3 = 0x3f; // back porch
+
+uint8_t var4 = 0x0a; // frame 
+uint8_t var5 = 0x20; // front porch
+uint8_t var6 = 0x3f;  // back porch
+#endif //#ifdef TFT_ST7789
 
 uint8_t selected = 7 ; 
 
@@ -156,17 +166,18 @@ struct GPoint {
 
 // Define the number of vertices in the vector shape.
 // In this example, we'll use a square.
-const int numPoints = 6;
+const int numPoints = 4;
 
 // Define the vector shape (a square)
 // These coordinates can be adjusted to suit your display and desired shape.
 GPoint shapePoints[numPoints] = {
   {10, 10},
-  {120, 80},
-  {200, 10},
-  {200, 200},
-  {120, 80},
-  {10, 200}
+  {100, 10},
+  {100, 100},
+  {10, 100}
+  
+ // {120, 80},
+ // {10, 200}
 };
 
 
@@ -249,7 +260,6 @@ void drawGraphics(void* parameter) {
         // Clear the drawing buffer
  
 
-
 //#ifdef TEARING_DEBUG
  
         if (drawBuffer==0) {
@@ -257,7 +267,6 @@ void drawGraphics(void* parameter) {
         } else {
         spr[drawBuffer].fillSprite(TFT_BLUE);
         }
-
 
 //#else
 //        spr[drawBuffer].fillSprite(TFT_BLACK);
@@ -278,6 +287,7 @@ void drawGraphics(void* parameter) {
         while (drawBuffer == displayBuffer) {
             vTaskDelay(1);
         }
+       
 
         // Switch to the other buffer for drawing
  //       drawBuffer = (drawBuffer == 0) ? 1 : 0;
@@ -315,7 +325,7 @@ void even_frame_timing (){
 #endif //#ifdef TEARING_DEBUG
 #endif // #ifdef TFT_ST7789
 
-#ifdef TFT_7735
+#ifdef TFT_ST7735
   tft.startWrite();
   tft.writecommand(ST7735_FRMCTR1); // frame rate control
 #ifdef TEARING_DEBUG
@@ -387,7 +397,7 @@ void setup() {
     tft.init();
     tft.initDMA();
     tft.setRotation(0);
-    tft.fillScreen(TFT_BLACK);
+    tft.fillScreen(TFT_BLUE);
     Serial.begin(115200);
     // Create sprites and get pointers
 //    for (int i = 0; i < 2; i++) {
@@ -409,9 +419,8 @@ void setup() {
     bufferMutex = xSemaphoreCreateMutex();
     
     // Initial display timing setup for even frames
-    even_frame_timing();
+  //  even_frame_timing();
     
-
     bufferStates[drawBuffer].ready = false; // mark as ready initally
 
     // Start drawing task
@@ -431,7 +440,6 @@ void loop() {
     if (currentTime - lastDisplayTime >= 1000 / DISPLAY_REFRESH_RATE) {
         lastDisplayTime = currentTime;
 
-//        tft.startWrite();
         even_frame_timing();  // set even frame timing
 
         oddFrame = !oddFrame;
